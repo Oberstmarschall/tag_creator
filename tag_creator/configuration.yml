@@ -1,0 +1,21 @@
+commit_types:
+  - type:
+      - BREAKING_CHANGE
+      - "BREAKING CHANGE"
+    majority: "major"
+  - type:
+      - feat
+      - build
+      - ci
+    majority: "minor"
+  - type:
+      - fix
+      - docs
+      - refactor
+      - perf
+      - test
+    majority: "patch"
+repo:
+    release_branch: "master"
+env:
+    merge_request: "MR"

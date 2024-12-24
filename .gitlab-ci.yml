@@ -1,0 +1,12 @@
+stages:
+  - test
+
+pytest:
+  stage: test
+  tags:
+    - vh-shell
+  image:
+    name: tag_creator:latest
+    pull_policy: if-not-present
+  script:
+    - python -m pytest
