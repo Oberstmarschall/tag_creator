@@ -1,12 +1,35 @@
 stages:
   - test
+  - deploy
 
-pytest:
-  stage: test
+default:
   tags:
     - vh-shell
   image:
     name: tag_creator:latest
     pull_policy: if-not-present
+
+pytest:
+  stage: test
   script:
     - python -m pytest
+
+mypy:
+  stage: test
+  script:
+    - python -m mypy -p tag_creator
+
+lint:
+  stage: test
+  script:
+    - flake8 .
+
+deploy:
+  stage: deploy
+  variables:
+    TWINE_USERNAME: gitlab-ci-token
+    TWINE_PASSWORD: $CI_JOB_TOKEN
+  script:
+    - pip install build twine
+    - python -m build
+    - python -m twine upload --repository-url ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/pypi dist/*

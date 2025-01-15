@@ -1,15 +1,24 @@
-import argparse
+import yaml
 from tag_creator.repository.version import ProjectVersionUpdater
-
+from tag_creator.logger import logger
+from tag_creator import configuration as cfg
+from tag_creator.arguments import args
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(prog="Repository tool.")
-    parser.add_argument("--repo_dir", help="Repository root directory", default=".")
-    parser.add_argument("--create_new_tag", help="Update tag", action="store_true")
-    parser.add_argument("--dry_run", help="Do not update remote", action="store_true", default=False)
 
-    args = parser.parse_args()
+    if args.show_config:
+        logger.info(yaml.dump(cfg.read_configuration()))
+
+    pvu = ProjectVersionUpdater(
+        repo_dir=args.repo_dir,
+        release_branch=args.release_branch,
+        prefix=args.tag_prefix,
+        dry_run=args.dry_run
+    )
 
     if args.create_new_tag:
-        ProjectVersionUpdater(args.repo_dir, args.dry_run).create_new_verion()
+        pvu.create_new_verion()
+
+    if args.current_version:
+        logger.info(f"Current tag: {pvu.current_tag()} Branch: {args.release_branch}")

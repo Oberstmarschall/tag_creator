@@ -15,7 +15,3 @@ commit_types:
       - perf
       - test
     majority: "patch"
-repo:
-    release_branch: "master"
-env:
-    merge_request: "MR"
