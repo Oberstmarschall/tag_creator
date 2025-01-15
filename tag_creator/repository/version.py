@@ -2,6 +2,7 @@ import re
 import tag_creator.configuration as cfg
 from tag_creator.logger import logger
 from tag_creator.repository.git import Git
+from typing import List
 
 
 class ProjectVersionUpdater(Git):
@@ -10,17 +11,20 @@ class ProjectVersionUpdater(Git):
     MINOR_VER = "minor"
     PATCH_VER = "patch"
 
-    def __init__(self, repo_dir: str, dry_run: bool) -> None:
+    def __init__(self, repo_dir: str, release_branch: str, dry_run: bool) -> None:
         super().__init__(repo_dir=repo_dir)
-        self.release_branch = cfg.read_configuration()["repo"]["release_branch"]
+        self.release_branch = release_branch
         self.dry_run = dry_run
 
     def create_new_verion(self) -> None:
+        """Create new tag for the release branch.
+        Tag pattern: d.d.d .Initial tag must be created manually.
+        """
         current_version = self.__current_tag()
         logger.info(f"Current version is {current_version}")
         new_patch = ".".join(map(
             str,
-            self.__increment_version(current_version, self.log("-n 1 --pretty=%B").stdout))
+            self.__increment_version(current_version, self.log("-n 1 --pretty=%B")))
         )
 
         if self.__is_tag_on_current_head(current_version):
@@ -35,17 +39,19 @@ class ProjectVersionUpdater(Git):
             return
         self.push(new_patch)
 
-    def __all_tags(self):
-        return self.tag(f"--merged {self.release_branch} --list '[0-9]*\\.[0-9]*\\.[0-9]*'").stdout.strip().splitlines()
+    def __all_tags(self) -> list[str]:
+        return list(
+            self.tag(f"--merged {self.release_branch} --list '[0-9]*\\.[0-9]*\\.[0-9]*'").strip().splitlines()
+        )
 
-    def __current_tag(self):
+    def __current_tag(self) -> str:
         tags = self.__all_tags()
         if not tags:
             raise Exception("There is no initial tag!")
-        return tags[-1]
+        return str(tags[-1])
 
     def __commit_hash(self, ref: str) -> str:
-        return self.rev_list(f"-n 1 {ref}").stdout
+        return str(self.rev_list(f"-n 1 {ref}"))
 
     def __is_tag_on_current_head(self, tag: str) -> bool:
         head_hash = self.__commit_hash("HEAD")
@@ -53,11 +59,11 @@ class ProjectVersionUpdater(Git):
 
         return (head_hash == tag_hash)
 
-    def __create_tag(self, tag: str, msg: str =""):
+    def __create_tag(self, tag: str, msg: str = "") -> None:
         logger.info(f"New tag will be created and pushed. Tag: {tag}, message {msg}")
         self.tag(f"-a '{tag}' -m '{msg}'")
 
-    def __increment_version(self, version: str, change_title: str) -> tuple:
+    def __increment_version(self, version: str, change_title: str) -> tuple[int, int, int]:
         major, minor, patch = map(int, version.split('.'))
         new_major, new_minor, new_patch = self.__patch_increment_based_on_title(change_title)
 
@@ -73,7 +79,7 @@ class ProjectVersionUpdater(Git):
 
         return (major, minor, patch)
 
-    def __patch_increment_based_on_title(self, title: str) -> tuple:
+    def __patch_increment_based_on_title(self, title: str) -> tuple[int, int, int]:
         """Extract patch based on the change title.
 
         Args:
@@ -97,24 +103,31 @@ class ProjectVersionUpdater(Git):
             raise Exception("Can not determine commit majority based on it's message!")
 
     def __is_major_version(self, commit_msg: str) -> bool:
-        return (
-            re.match(f"^(" + ('|').join(self.__all_commit_types()) + ")[a-z()]*!:", commit_msg, re.MULTILINE) or
-            re.search(f"^(" + ('|').join(self.__types_for_majority(self.MAJOR_VER)) + r"): \w", commit_msg, re.MULTILINE)
+        return bool(
+            re.match("^(" + ('|').join(self.__all_commit_types()) + ")[a-z()]*!:", commit_msg, re.MULTILINE) or
+            re.search("^(" + ('|').join(self.__types_for_majority(self.MAJOR_VER)) + r"): \w", commit_msg, re.MULTILINE)
         )
 
-    def __types_for_majority(self, majority: str) -> list:
-        types = []
-        types.extend([entry["type"] for entry in cfg.allowed_commit_types() if entry["majority"] == majority])
+    def __types_for_majority(self, majority: str) -> List[str]:
+        types: list[str] = []
+        types.extend(
+            [entry["type"] for entry in cfg.allowed_commit_types() if entry["majority"] == majority]  # type: ignore
+        )
         return [item for sublist in types for item in sublist]
 
-    def __all_commit_types(self) -> list:
-        majority = []
+    def __all_commit_types(self) -> list[str]:
+        majority: list[str] = []
         for entry in cfg.allowed_commit_types():
-            majority.extend(entry["type"])
+            if isinstance(entry, dict) and "type" in entry:
+                majority.extend(entry["type"])
+            else:
+                logger.warning(f"Skipping invalid entry: {entry}")
 
         return majority
 
     def __is_starts_from_version(self, version: str, commit_msg: str) -> bool:
-        return re.match(f"^(" + "|".join(self.__types_for_majority(version)) + ")[a-z()]*:", commit_msg, re.MULTILINE)
-
-
+        return bool(re.match(
+            "^(" + "|".join(self.__types_for_majority(version)) + ")[a-z()]*:",
+            commit_msg,
+            re.MULTILINE
+        ))

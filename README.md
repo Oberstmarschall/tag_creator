@@ -1,3 +1,3 @@
-## my test project
+## Tag creator
 
-fooo
+My personal project. The main goal is to create release tags automatically.
