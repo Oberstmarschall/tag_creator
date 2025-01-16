@@ -9,7 +9,7 @@
     ]
     description = "Project to automatically create release tags based on merged commit message'"
     readme = "README.md"
-    license = {file = "LICENSE"}
+    license = {"file" = "LICENSE"}
     requires-python = ">=3.11"
     classifiers = [
         "Programming Language :: Python :: 3.11",

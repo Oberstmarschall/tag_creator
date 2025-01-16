@@ -1,0 +1,48 @@
+name: Deploy
+
+on:
+  # push:
+  #   branches:
+  #     - main
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to deploy'
+        required: true
+        default: 'main'
+
+jobs:
+  build:
+    runs-on: self-hosted
+    container:
+      image: vogonchar/tag_creator:latest
+    steps:
+      - name: Cleanup
+        run: find ${GITHUB_WORKSPACE} -mindepth 1 -delete
+      - uses: actions/checkout@v4
+      - name: build
+        run: |
+          git config --global --add safe.directory '*'
+          git fetch
+          git checkout feature/test
+          git config --global user.email "test@mycomp.org"
+          git config --global user.name "Bot"
+          python -m build
+          pip install .
+          git tag
+          python -m tag_creator --create_new_tag --dry_run --release_branch feature/test --tag_prefix="v"
+  deploy:
+    needs: [build]
+    runs-on: self-hosted
+    container:
+      image: vogonchar/tag_creator:latest
+    env:
+      PIP_TOKEN: ${{secrets.PIP_TOKEN}}
+    steps:
+      - name: Cleanup
+        run: find ${GITHUB_WORKSPACE} -mindepth 1 -delete
+      - uses: actions/checkout@v4
+      - name: deploy
+        run: |
+          python -m build
+          python -m twine upload --verbose --repository testpypi -u __token__ -p "${PIP_TOKEN}" dist/*

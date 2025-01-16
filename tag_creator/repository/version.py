@@ -11,44 +11,49 @@ class ProjectVersionUpdater(Git):
     MINOR_VER = "minor"
     PATCH_VER = "patch"
 
-    def __init__(self, repo_dir: str, release_branch: str, dry_run: bool) -> None:
+    def __init__(self, repo_dir: str, release_branch: str, dry_run: bool = False, prefix: str = "") -> None:
         super().__init__(repo_dir=repo_dir)
         self.release_branch = release_branch
+        self.prefix = prefix
         self.dry_run = dry_run
+
+    def current_tag(self) -> str:
+        tags = self.__all_tags()
+        if not tags:
+            raise Exception("There is no initial tag!")
+        return str(tags[-1])
 
     def create_new_verion(self) -> None:
         """Create new tag for the release branch.
-        Tag pattern: d.d.d .Initial tag must be created manually.
+        Tag pattern: ${prefix}d.d.d .Initial tag must be created manually.
         """
-        current_version = self.__current_tag()
-        logger.info(f"Current version is {current_version}")
-        new_patch = ".".join(map(
-            str,
-            self.__increment_version(current_version, self.log("-n 1 --pretty=%B")))
-        )
-
+        current_version = self.current_tag()
+        logger.info(f"Current version is: {current_version}")
         if self.__is_tag_on_current_head(current_version):
             logger.warning(
                 f"There are no new changes starting from the latest tag: {current_version}. Skip tag creation."
             )
             return
 
-        self.__create_tag(new_patch, "Automatically created tag")
+        version_without_prefix = self.__version_witout_prefix(current_version)
+        new_tag = self.__add_prefix(".".join(map(
+            str,
+            self.__increment_version(version_without_prefix, self.log("-n 1 --pretty=%B")))
+        ))
+
+        self.__create_tag(new_tag, "Automatically created tag")
         if self.dry_run:
             logger.info("Dry run! New tag will not be pushed.")
             return
-        self.push(new_patch)
+        self.push(new_tag)
 
     def __all_tags(self) -> list[str]:
         return list(
-            self.tag(f"--merged {self.release_branch} --list '[0-9]*\\.[0-9]*\\.[0-9]*'").strip().splitlines()
+            self.tag(
+                f"--merged '{self.release_branch}' --sort=creatordate --list "
+                f"'{self.prefix}[0-9]*\\.[0-9]*\\.[0-9]*'"
+            ).strip().splitlines()
         )
-
-    def __current_tag(self) -> str:
-        tags = self.__all_tags()
-        if not tags:
-            raise Exception("There is no initial tag!")
-        return str(tags[-1])
 
     def __commit_hash(self, ref: str) -> str:
         return str(self.rev_list(f"-n 1 {ref}"))
@@ -79,6 +84,12 @@ class ProjectVersionUpdater(Git):
 
         return (major, minor, patch)
 
+    def __version_witout_prefix(self, version: str) -> str:
+        return version.lstrip(self.prefix)
+
+    def __add_prefix(self, version: str) -> str:
+        return f"{self.prefix}{version}"
+
     def __patch_increment_based_on_title(self, title: str) -> tuple[int, int, int]:
         """Extract patch based on the change title.
 
@@ -91,7 +102,7 @@ class ProjectVersionUpdater(Git):
         Returns:
             tuple: major, minor and patch increment
         """
-        logger.info(f"Commit (MR) msg: {title}")
+        logger.info(f"Determine increments for new tag based on commit (MR) msg: {title}")
 
         if self.__is_major_version(title):
             return 1, 0, 0
