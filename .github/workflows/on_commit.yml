@@ -5,6 +5,7 @@ on:
     types:
       - synchronize
       - edited
+      - opened
 
 jobs:
   code-test:
