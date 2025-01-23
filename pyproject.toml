@@ -1,6 +1,6 @@
 [project]
     name = "tag_creator"
-    version = "0.0.2"
+    version = "0.0.3"
     authors = [
         { name="Vladyslav Honcharenko", email="goncharvlad02@gmail.com" }
     ]
@@ -19,6 +19,8 @@
     exclude = ["tests", "tests.*"]
 [tool.setuptools.dynamic]
     dependencies = {file = ["requirements.txt"]}
+[tool.setuptools]
+    package-data = { "tag_creator" = ["configuration.yml"] }
 [build-system]
     requires = ["setuptools >= 75.0.0"]
     build-backend = "setuptools.build_meta"
