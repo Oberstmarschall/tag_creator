@@ -18,6 +18,8 @@ fix: some fix
 BREAKING CHANGE: this is a breaking change!
 ```
 
+Initial list of types in the configuration provided by [conventional-changelog](https://github.com/conventional-changelog/commitlint/tree/master/@commitlint/config-conventional#type-enum).
+
 ## Features
 
 - Automatically generates release tags
