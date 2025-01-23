@@ -1,6 +1,6 @@
 [project]
     name = "tag_creator"
-    version = "0.0.3"
+    version = "v0.0.4"
     authors = [
         { name="Vladyslav Honcharenko", email="goncharvlad02@gmail.com" }
     ]
@@ -24,3 +24,5 @@
 [build-system]
     requires = ["setuptools >= 75.0.0"]
     build-backend = "setuptools.build_meta"
+[project.urls]
+    Repository = "https://github.com/Oberstmarschall/tag_creator"
