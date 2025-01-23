@@ -24,13 +24,13 @@ jobs:
         run: |
           git config --global --add safe.directory '*'
           git fetch
-          git checkout feature/test
+          git checkout main
           git config --global user.email "test@mycomp.org"
           git config --global user.name "Bot"
           python -m build
           pip install .
           git tag
-          python -m tag_creator --create_new_tag --dry_run --release_branch feature/test --tag_prefix="v"
+          python -m tag_creator --create_new_tag --dry_run --release_branch main --tag_prefix="v"
   deploy:
     needs: [build]
     runs-on: self-hosted
