@@ -7,6 +7,7 @@ commit_types:
       - feat
       - build
       - ci
+      - revert
     majority: "minor"
   - type:
       - fix
@@ -14,4 +15,6 @@ commit_types:
       - refactor
       - perf
       - test
+      - chore
+      - style
     majority: "patch"
