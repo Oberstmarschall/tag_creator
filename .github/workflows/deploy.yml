@@ -1,15 +1,15 @@
 name: Deploy
 
 on:
-  pull_request:
-    types:
-      - synchronize
-  # workflow_dispatch:
-  #   inputs:
-  #     branch:
-  #       description: 'Branch to deploy'
-  #       required: true
-  #       default: 'main'
+  # push:
+  #   branches:
+  #     - main
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to deploy'
+        required: true
+        default: 'main'
 
 jobs:
   build:
@@ -25,9 +25,7 @@ jobs:
       - name: build
         run: |
           git config --global --add safe.directory '*'
-          git fetch --all
           git checkout main
-          git log -n 10
           git config --global user.email "test@mycomp.org"
           git config --global user.name "Bot"
           python -m build
