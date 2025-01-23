@@ -20,12 +20,12 @@ jobs:
       - name: Cleanup
         run: find ${GITHUB_WORKSPACE} -mindepth 1 -delete
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: build
         run: |
           git config --global --add safe.directory '*'
-          git fetch
           git checkout main
-          git pull
           git config --global user.email "test@mycomp.org"
           git config --global user.name "Bot"
           python -m build
