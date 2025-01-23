@@ -1,6 +1,6 @@
 ## Tag creator
 
-Tag Creator is a Python tool that automatically generates release tags follow [SevVer](https://semver.org/) conventions.
+Tag Creator is a Python tool that automatically generates release tags follow [SemVer](https://semver.org/) conventions.
 It's designed to streamline the process of creating version tags for software projects, ensuring consistency and saving time.
 Each new release tag will be created based on the latest tag version for the provided git branch. Increments for new version
 will be parsed from the commit message. Commit messages must follow the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) format.
@@ -27,5 +27,6 @@ BREAKING CHANGE: this is a breaking change!
 ## Configuration
 
 Use --help option to see available scripts options.
-You can provide custom configuration file to change default majority-to-type match to change the script behaviour.
+You can provide a custom configuration file to change the default majority-to-type match to change the script behaviour.
 Default configuration file is located [here](tag_creator/configuration.yml)
+Be aware that configs will not be joined when you provide new config file.
