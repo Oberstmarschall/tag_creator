@@ -71,8 +71,11 @@ def test_not_allowed_type_raise():
         ("perf: docs", (0, 0, 1)),
         ("test: refactor", (0, 0, 1)),
         ("feat: new feature", (0, 1, 0)),
+        ("style: new feature", (0, 0, 1)),
+        ("chore: new feature", (0, 0, 1)),
         ("ci: new feature", (0, 1, 0)),
         ("build: new feature", (0, 1, 0)),
+        ("revert: new feature", (0, 1, 0)),
         ("feat!: test", (1, 0, 0)),
         ("BREAKING_CHANGE: foo", (1, 0, 0)),
         ("fix: some fix\nBREAKING_CHANGE: foo", (1, 0 , 0))
