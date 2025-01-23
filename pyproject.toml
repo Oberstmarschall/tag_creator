@@ -2,15 +2,15 @@
     name = "tag_creator"
     version = "0.0.1"
     authors = [
-        { name="Vladyslav Honcharenko", email="v.honcharenko@dxc.com" },
+        { name="Vladyslav Honcharenko", email="gonchadvlad02@gmail.com" }
     ]
     maintainers = [
-        { name="Vladyslav Honcharenko", email="v.honcharenko@dxc.com" },
+        { name="Vladyslav Honcharenko", email="gonchadvlad02@gmail.com" },
     ]
     description = "Project to automatically create release tags based on merged commit message'"
     readme = "README.md"
-    license = {file = "LICENSE"}
-    requires-python = ">=3.8"
+    license = {"file" = "LICENSE"}
+    requires-python = ">=3.11"
     classifiers = [
         "Programming Language :: Python :: 3.11",
     ]

@@ -1,0 +1,38 @@
+name: On-commit
+
+on:
+  pull_request:
+    types:
+      - synchronize
+      - edited
+
+jobs:
+  code-test:
+    if: github.event.action == 'synchronize'
+    runs-on: self-hosted
+    container:
+      image: vogonchar/tag_creator:latest
+    steps:
+      - name: Cleanup
+        run: find ${GITHUB_WORKSPACE} -mindepth 1 -delete
+      - uses: actions/checkout@v4
+      - name: pytest
+        run: python -m pytest
+      - name: mypy
+        run: python -m mypy -p tag_creator --config .mypy.ini
+      - name: flake8
+        run: flake8 .
+  commit-lint:
+    runs-on: self-hosted
+    container:
+      image: registry.hub.docker.com/library/node:alpine
+    steps:
+      - name: Cleanup
+        run: find ${GITHUB_WORKSPACE} -mindepth 1 -delete
+      - uses: actions/checkout@v4
+      - name: lint
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          npm install --save-dev @commitlint/config-conventional @commitlint/cli
+          echo -e $TITLE | npx commitlint
