@@ -25,6 +25,7 @@ jobs:
           git config --global --add safe.directory '*'
           git fetch
           git checkout main
+          git pull
           git config --global user.email "test@mycomp.org"
           git config --global user.name "Bot"
           python -m build
