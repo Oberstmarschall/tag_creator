@@ -5,10 +5,10 @@ on:
     types:
       - synchronize
       - edited
+      - opened
 
 jobs:
   code-test:
-    if: github.event.action == 'synchronize'
     runs-on: self-hosted
     container:
       image: vogonchar/tag_creator:latest
