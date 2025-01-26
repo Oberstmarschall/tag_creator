@@ -1,13 +1,14 @@
 [project]
     name = "tag_creator"
-    version = "v0.0.4"
+    version = "v0.0.5"
+    keywords = ["git", "tag", "create git tag", "git release tag", "semver tag"]
     authors = [
         { name="Vladyslav Honcharenko", email="goncharvlad02@gmail.com" }
     ]
     maintainers = [
         { name="Vladyslav Honcharenko", email="goncharvlad02@gmail.com" },
     ]
-    description = "Project to automatically create release tags based on merged commit message'"
+    description = "Automatically create git release tags based on a merged commit message and previous tag."
     readme = "README.md"
     license = {"file" = "LICENSE"}
     requires-python = ">=3.11"
