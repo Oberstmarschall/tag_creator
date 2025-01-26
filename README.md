@@ -26,9 +26,80 @@ Initial list of types in the configuration provided by [conventional-changelog](
 - Easy integration into existing workflows
 - Lightweight and configurable
 
-## Configuration
+## Examples
 
-Use --help option to see available scripts options.
+Use --help option to see available scripts arguments.
+
+### Show the latest tag for branch
+
+Since project tags have the `v` prefix before versions, `--tag_prefix="v"` argument passed.
+
+```python
+python -m tag_creator --current_version --release_branch="main" --tag_prefix="v"
+__main__ INFO: Current tag: v0.0.3 Branch: main
+```
+
+Internal command to search a tag will be: `git -C . tag --merged 'main' --sort=creatordate --list 'v[0-9]*\.[0-9]*\.[0-9]*'`.
+
+### Create new release tag
+
+To create new tag with push to remote use `--create_new_tag ` argument. Add `--dry_run` argument if you do not need to update your remote.
+```python
+python -m tag_creator --create_new_tag --tag_prefix="v" --release_branch="main"
+
+version INFO: Current version is: v0.0.4
+14:36:01 version INFO: Determine increments for new tag based on commit (MR) msg: docs: foo-bar
+
+version INFO: New tag will be created and pushed. Tag: v0.0.5, message Automatically created tag
+```
+
+### See or change the configuration
+
+
 You can provide a custom configuration file to change the default majority-to-type match to change the script behaviour.
 Default configuration file is located [here](tag_creator/configuration.yml)
 Be aware that configs will not be joined when you provide new config file.
+
+See default config:
+
+```python
+python -m tag_creator --show_config
+
+__main__ INFO: commit_types:
+- majority: major
+  type:
+  - BREAKING_CHANGE
+  - BREAKING CHANGE
+- majority: minor
+  type:
+  - feat
+  - build
+  - ci
+  - revert
+- majority: patch
+  type:
+  - fix
+  - docs
+  - refactor
+  - perf
+  - test
+  - chore
+  - style
+```
+
+Update config (follow the same structure as in the default configuration file):
+
+```python
+python -m tag_creator --config="$HOME/custom_cfg.yml" --show_config
+configuration INFO: Custom config read!
+__main__ INFO: commit_types:
+- majority: major
+  type:
+  - major
+- majority: minor
+  type:
+  - minor
+- majority: patch
+  type:
+  - patch
+```
