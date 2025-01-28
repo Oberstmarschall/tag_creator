@@ -45,7 +45,7 @@ class ProjectVersionUpdater(Git):
         if self.dry_run:
             logger.info("Dry run! New tag will not be pushed.")
             return
-        self.push(new_tag)
+        self.push(new_tag, "tag")
 
     def __all_tags(self) -> list[str]:
         return list(
