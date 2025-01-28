@@ -12,8 +12,8 @@ class Git():
     def rev_list(self, args: str = "") -> str:
         return self.__git_cmd(f"rev-list {args}")
 
-    def push(self, reference: str = "") -> str:
-        return self.__git_cmd(f"push origin {reference}")
+    def push(self, reference: str = "", args: str = "") -> str:
+        return self.__git_cmd(f"push origin {args} {reference}")
 
     def log(self, args: str = "") -> str:
         return self.__git_cmd(f"log {args}")
