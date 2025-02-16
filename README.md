@@ -53,6 +53,12 @@ version INFO: Current version is: v0.0.4
 version INFO: New tag will be created and pushed. Tag: v0.0.5, message Automatically created tag
 ```
 
+To create new tag from the bunch of commits, e.g. in case of merge not squashed merge request, use `--start_from` option.
+It allows to parse all commits from the specified version to current HEAD and select the highest increment, based on
+commit messages. Be aware, that only current HEAD are not allowed to contain a tag!
+
+See your CI preferences to obtain a commit before your merge.
+
 ### See or change the configuration
 
 
