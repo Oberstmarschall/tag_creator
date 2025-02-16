@@ -25,7 +25,7 @@ def mock_shell():
         yield mock
 
 def test_version_updated(mock_shell):
-    ProjectVersionUpdater(repo_dir="fake_repo", release_branch="main", dry_run=False).create_new_verion()
+    ProjectVersionUpdater(repo_dir="fake_repo", release_branch="main", dry_run=False).create_new_version()
 
     mock_shell.assert_has_calls([
         call("git -C fake_repo tag --merged 'main' --sort=creatordate --list '[0-9]*\\.[0-9]*\\.[0-9]*'"),
@@ -36,13 +36,65 @@ def test_version_updated(mock_shell):
         call("git -C fake_repo push origin tag 1.0.1"),
     ])
 
+@pytest.mark.parametrize(
+    "commits, expected_result",
+    [
+        (
+            {
+                "123rty": "fix: some fix",
+                "321cbd": "feat: some feat",
+                "098rcm": "fix: some fix",
+                "123abc": "chore: some change",
+            },
+            "1.1.0"
+        ),
+        (
+            {
+                "123tyy": "fix: some fix",
+                "321cbd": "feat: some feat",
+                "123abc": "fix!: some major fix",
+            },
+            "2.0.0"
+        ),
+        (
+            {
+                "123qer": "fix: some fix",
+                "123abc": "fix: another fix",
+            },
+            "1.0.1"
+        )
+    ]
+)
+def test_version_update_from_batch(commits, expected_result):
+    commit_msg_from_hash = lambda commits, text: next((msg for hash, msg in commits.items() if hash in text), None)
+    def mock_exec(command, *args, **kwargs):
+        if "tag --merged" in command:
+            return "1.0.0"
+        elif "log --oneline --boundary --pretty=%H" in command:
+            return "\n".join(commits.keys())
+        elif "--pretty=%B" in command:
+            return commit_msg_from_hash(commits, command)
+        elif "-n 1 HEAD" in command:
+            return "1"
+        else:
+            return "foo-bar"
+
+    with patch('tag_creator.utils.shell.exec', MagicMock()) as mock:
+        mock.side_effect = mock_exec
+        ProjectVersionUpdater(repo_dir="fake_repo", release_branch="main", dry_run=False).new_versions_from_batch("abc123")
+
+        mock.assert_has_calls([
+            call(f"git -C fake_repo tag -a '{expected_result}' -m 'Automatically created tag'"),
+            call(f"git -C fake_repo push origin tag {expected_result}")
+        ])
+
 def test_dry_run_mode(mock_shell):
-    ProjectVersionUpdater(repo_dir="fake_repo", release_branch="main", dry_run=True).create_new_verion()
+    ProjectVersionUpdater(repo_dir="fake_repo", release_branch="main", dry_run=True).create_new_version()
 
     assert call("git -C fake_repo push origin tag 1.0.1") not in mock_shell.call_args_list
 
 def test_tag_creation_with_prefix(mock_shell):
-    ProjectVersionUpdater(repo_dir="fake_repo", release_branch="main", prefix="v").create_new_verion()
+    ProjectVersionUpdater(repo_dir="fake_repo", release_branch="main", prefix="v").create_new_version()
 
     mock_shell.assert_has_calls([
         call("git -C fake_repo tag --merged 'main' --sort=creatordate --list 'v[0-9]*\\.[0-9]*\\.[0-9]*'"),
@@ -62,7 +114,7 @@ def test_not_allowed_type_raise():
                 else:
                     return "foo-bar"
             shell_mock.side_effect = mock_exec
-            ProjectVersionUpdater(repo_dir="fake_repo", release_branch="main", prefix="v").create_new_verion()
+            ProjectVersionUpdater(repo_dir="fake_repo", release_branch="main", prefix="v").create_new_version()
 
 @pytest.mark.parametrize(
     "commit_msg, increments",
@@ -95,7 +147,7 @@ def test_increments_based_on_commit_msg(commit_msg, increments):
 
         shell_mock.side_effect = mock_exec
 
-        ProjectVersionUpdater(repo_dir="fake_repo", release_branch="main", prefix="v").create_new_verion()
+        ProjectVersionUpdater(repo_dir="fake_repo", release_branch="main", prefix="v").create_new_version()
         expected_tag = f"v{1 + increments[0]}.{0 + increments[1]}.{0 + increments[2]}"
 
         shell_mock.assert_any_call(f"git -C fake_repo tag -a '{expected_tag}' -m 'Automatically created tag'")

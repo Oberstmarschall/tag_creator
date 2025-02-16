@@ -1,6 +1,6 @@
 [project]
     name = "tag_creator"
-    version = "v0.0.5"
+    version = "v0.1.0"
     keywords = ["git", "tag", "create git tag", "git release tag", "semver tag"]
     authors = [
         { name="Vladyslav Honcharenko", email="goncharvlad02@gmail.com" }
