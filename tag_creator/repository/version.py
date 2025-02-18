@@ -2,7 +2,7 @@ import re
 import tag_creator.configuration as cfg
 from tag_creator.logger import logger
 from tag_creator.repository.git import Git
-from typing import List, Tuple, Dict
+from typing import List, Tuple
 
 
 class ProjectVersionUpdater(Git):
@@ -28,47 +28,19 @@ class ProjectVersionUpdater(Git):
         Tag pattern: ${prefix}d.d.d .Initial tag must be created manually.
         """
         current_version = self.current_tag()
-        self.__exit_tag_exists_on_head(current_version)
+        self._exit_tag_exists_on_head(current_version)
 
-        new_tag = self.__formatted_new_tag(current_version, self.log("-n 1 --pretty=%B"))
-        self.__create_and_push_tag(new_tag)
+        new_tag = self._formatted_new_tag(current_version, self.log("-n 1 --pretty=%B"))
+        self._create_and_push_tag(new_tag)
 
-    def new_versions_from_batch(self, start_commit: str) -> None:
-        """Create new version from batch of commits. Select the highest increment.
-        Commits collected from start_commit to current HEAD
-
-        Args:
-            start_commit (str): the oldest commit
-        """
-        current_version = self.current_tag()
-        self.__exit_tag_exists_on_head(current_version)
-        references = self.__refs_from_batch(start_commit)
-
-        increments = {}
-        for reference in references:
-            commit_message = self.log(f"-n 1 --pretty=%B {reference}")
-            increments[reference] = self.__patch_increment_based_on_title(commit_message)
-
-        commit_to_use_for_update = (self.__select_increment_version_from_batch(increments))
-        new_tag = self.__formatted_new_tag(current_version, self.log(f" -n 1 --pretty=%B {commit_to_use_for_update}"))
-        self.__create_and_push_tag(new_tag)
-
-    def __formatted_new_tag(self, current_version: str, commit_message: str) -> str:
+    def _formatted_new_tag(self, current_version: str, commit_message: str) -> str:
         version_without_prefix = self.__version_witout_prefix(current_version)
         return self.__add_prefix(".".join(map(
             str,
             self.__increment_version(version_without_prefix, commit_message))
         ))
 
-    def __refs_from_batch(self, start_commit: str) -> list[str]:
-        refs = self.log(f"--oneline --boundary --pretty=%H {start_commit}..HEAD").strip().splitlines()
-
-        if not refs:
-            raise Exception(f"Can not find list of commits between {start_commit} and HEAD")
-
-        return refs
-
-    def __exit_tag_exists_on_head(self, current_version: str) -> None:
+    def _exit_tag_exists_on_head(self, current_version: str) -> None:
         logger.info(f"Current version is: {current_version}")
         if self.__is_tag_on_current_head(current_version):
             logger.warning(
@@ -76,25 +48,35 @@ class ProjectVersionUpdater(Git):
             )
             raise Exception("There is a tag pointing to current HEAD")
 
-    def __create_and_push_tag(self, tag: str) -> None:
+    def _create_and_push_tag(self, tag: str) -> None:
         self.__create_tag(tag, "Automatically created tag")
         if self.dry_run:
             logger.info("Dry run! New tag will not be pushed.")
             return
         self.push(tag, "tag")
 
-    def __select_increment_version_from_batch(self, increments: Dict[str, Tuple[int, ...]]) -> str:
-        tuple_to_increment_index = {}
+    def _patch_increment_based_on_title(self, title: str) -> Tuple[int, ...]:
+        """Extract patch based on the change title.
 
-        for commit_hash, tuple in increments.items():
-            tuple_to_increment_index[commit_hash] = tuple.index(1)
+        Args:
+            title (_type_): merge request or commit.
 
-        return str(
-            [
-                key for key in tuple_to_increment_index
-                if tuple_to_increment_index[key] == min(tuple_to_increment_index.values())
-            ][0]
-        )
+        Raises:
+            Exception: There are no allowed commit types in the configuration.
+
+        Returns:
+            tuple: major, minor and patch increment
+        """
+        logger.info(f"Determine increments for new tag based on commit (MR) msg: {title}")
+
+        if self.__is_major_version(title):
+            return (1, 0, 0)
+        elif self.__is_starts_from_version(self.MINOR_VER, title):
+            return (0, 1, 0)
+        elif self.__is_starts_from_version(self.PATCH_VER, title):
+            return (0, 0, 1)
+        else:
+            raise Exception("Can not determine commit majority based on it's message!")
 
     def __all_tags(self) -> list[str]:
         return list(
@@ -120,7 +102,7 @@ class ProjectVersionUpdater(Git):
     def __increment_version(self, version: str, change_title: str) -> Tuple[int, ...]:
         logger.info(f"Commit:\n{change_title}\nwill be used to update tag.")
         major, minor, patch = map(int, version.split('.'))
-        new_major, new_minor, new_patch = self.__patch_increment_based_on_title(change_title)
+        new_major, new_minor, new_patch = self._patch_increment_based_on_title(change_title)
 
         if new_major > 0:
             major += new_major
@@ -139,29 +121,6 @@ class ProjectVersionUpdater(Git):
 
     def __add_prefix(self, version: str) -> str:
         return f"{self.prefix}{version}"
-
-    def __patch_increment_based_on_title(self, title: str) -> Tuple[int, ...]:
-        """Extract patch based on the change title.
-
-        Args:
-            title (_type_): merge request or commit.
-
-        Raises:
-            Exception: There are no allowed commit types in the configuration.
-
-        Returns:
-            tuple: major, minor and patch increment
-        """
-        logger.info(f"Determine increments for new tag based on commit (MR) msg: {title}")
-
-        if self.__is_major_version(title):
-            return (1, 0, 0)
-        elif self.__is_starts_from_version(self.MINOR_VER, title):
-            return (0, 1, 0)
-        elif self.__is_starts_from_version(self.PATCH_VER, title):
-            return (0, 0, 1)
-        else:
-            raise Exception("Can not determine commit majority based on it's message!")
 
     def __is_major_version(self, commit_msg: str) -> bool:
         return bool(
