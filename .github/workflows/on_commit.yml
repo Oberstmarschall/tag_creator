@@ -53,5 +53,5 @@ jobs:
           python -m build
           pip install .
           git fetch --all
-          git checkout main
-          python -m tag_creator --create_new_tag --dry_run --release_branch main --tag_prefix="v"
+          git checkout ${{ github.event.pull_request.head.ref }}
+          python -m tag_creator --create_new_tag --dry_run --release_branch ${{ github.event.pull_request.head.ref }} --tag_prefix="v"
